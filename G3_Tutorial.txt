@@ -1,0 +1,43 @@
+# Follow this tutorial by your own risk!
+
+# To make 1660 TI mobile works properly, I have used the RPM Fusion Repository. All the steps depicted below are in RPM Fusion webpage on Configuration and Howto sections. Notice that this tutorial is focused on Dell G3 3790, and through it I could be able to use both nvidia GPU, and the audio system perfectly. I cannot ensure that this will working for other Dell laptops, and it should be verified on RPM Fusion webpage. 
+# To add the repository of free and the nonfree repository execute:
+
+- sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+# Also install the complements multimedia packages by gstreamer enabled applications and sound-and-video complement packages:
+
+- sudo dnf groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
+- sudo dnf groupupdate sound-and-video\
+
+# I will skip the determination of card model due to the nature of this tutorial. The next step is to install the drivers:
+
+- sudo dnf update -y # and reboot if you are not on the latest kernel
+- sudo dnf install akmod-nvidia # rhel/centos users can use kmod-nvidia instead
+- sudo dnf install xorg-x11-drv-nvidia-cuda #optional for cuda/nvdec/nvenc support
+
+# If everything worked fine, then "modinfo -F version nvidia" should return "440.82" (Apr 26th).
+
+# I have done this process twice, and only activing the Dynamic Power Management through Nvidia Prime Support worked for me, hence I am including this step here:
+
+- sudo -s
+- dnf update
+- cat > /etc/modprobe.d/nvidia.conf <<EOF
+# Enable DynamicPwerManagement
+# http://download.nvidia.com/XFree86/Linux-x86_64/440.31/README/dynamicpowermanagement.html
+options nvidia NVreg_DynamicPowerManagement=0x02
+EOF
+
+# According to RPM Fusion, "Gnome with Wayland and NVIDIA doesn't work by default at this point. With Fedora 29, mutter has support for NVIDIA eglstream but it's disabled at runtime by a udev rules.". Then:
+
+a. Comment the "DRIVER==nvidia" line in /usr/lib/udev/rules.d/64-gdm.rules (When I checked this was already default on my computer after the driver installation).
+b. Comment "WaylandEnable=false" in /etc/gdm/custom.conf" (When I checked this was not default on my computer after the driver installation, then I had to modify it).
+
+# The last step is modify the audio setting on Alsa - after update the kernel I have lost audio output on my notebook, and fixed using: 
+
+- echo "options snd-intel-dspcfg dsp_driver=1" > /etc/modprobe.d/alsa.conf
+
+Reboot, and hopefully your G3 will be working great.
+
+Let your comments! ")
+
